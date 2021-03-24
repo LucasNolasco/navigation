@@ -42,6 +42,8 @@
 #include <pluginlib/class_list_macros.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
+const double MIN_TRACE_RANGE = 2.0;
+
 PLUGINLIB_EXPORT_CLASS(costmap_2d::ObstacleLayer, costmap_2d::Layer)
 
 using costmap_2d::NO_INFORMATION;
@@ -364,7 +366,8 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
 
     const sensor_msgs::PointCloud2& cloud = *(obs.cloud_);
 
-    double sq_obstacle_range = obs.obstacle_range_ * obs.obstacle_range_;
+    double sq_obstacle_max_range = 6.0 * 6.0; // obs.obstacle_max_range_ * obs.obstacle_max_range_;
+    double sq_obstacle_min_range = 2.0 * 2.0; // obs.obstacle_min_range_ * obs.obstacle_min_range_;
 
     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
@@ -386,9 +389,14 @@ void ObstacleLayer::updateBounds(double robot_x, double robot_y, double robot_ya
           + (pz - obs.origin_.z) * (pz - obs.origin_.z);
 
       // if the point is far enough away... we won't consider it
-      if (sq_dist >= sq_obstacle_range)
+      if (sq_dist >= sq_obstacle_max_range)
       {
         ROS_DEBUG("The point is too far away");
+        continue;
+      }
+      
+      if (sq_dist < sq_obstacle_min_range) {
+        ROS_DEBUG("The point is too close");
         continue;
       }
 
@@ -566,12 +574,14 @@ void ObstacleLayer::raytraceFreespace(const Observation& clearing_observation, d
     if (!worldToMap(wx, wy, x1, y1))
       continue;
 
-    unsigned int cell_raytrace_range = cellDistance(clearing_observation.raytrace_range_);
+    unsigned int cell_raytrace_max_range = cellDistance(clearing_observation.raytrace_range_);
+    unsigned int cell_raytrace_min_range = cellDistance(MIN_TRACE_RANGE);
     MarkCell marker(costmap_, FREE_SPACE);
     // and finally... we can execute our trace to clear obstacles along that line
-    raytraceLine(marker, x0, y0, x1, y1, cell_raytrace_range);
+    std::cout << "Raytrace max: " << cell_raytrace_max_range << ", Raytrace min: " << cell_raytrace_min_range << std::endl;
+    raytraceLine(marker, x0, y0, x1, y1, cell_raytrace_max_range, cell_raytrace_min_range);
 
-    updateRaytraceBounds(ox, oy, wx, wy, clearing_observation.raytrace_range_, min_x, min_y, max_x, max_y);
+    updateRaytraceBounds(ox, oy, wx, wy, clearing_observation.raytrace_range_, MIN_TRACE_RANGE, min_x, min_y, max_x, max_y);
   }
 }
 
@@ -599,12 +609,15 @@ void ObstacleLayer::deactivate()
   }
 }
 
-void ObstacleLayer::updateRaytraceBounds(double ox, double oy, double wx, double wy, double range,
+void ObstacleLayer::updateRaytraceBounds(double ox, double oy, double wx, double wy, double max_range, double min_range,
                                          double* min_x, double* min_y, double* max_x, double* max_y)
 {
-  double dx = wx-ox, dy = wy-oy;
+  double dx = wx - ox, dy = wy - oy;
   double full_distance = hypot(dx, dy);
-  double scale = std::min(1.0, range / full_distance);
+  if (full_distance < min_range) {
+    return;
+  }
+  double scale = std::min(1.0, max_range / full_distance);
   double ex = ox + dx * scale, ey = oy + dy * scale;
   touch(ex, ey, min_x, min_y, max_x, max_y);
 }

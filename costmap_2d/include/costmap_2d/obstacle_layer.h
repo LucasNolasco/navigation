@@ -141,6 +141,9 @@ protected:
   virtual void raytraceFreespace(const costmap_2d::Observation& clearing_observation, double* min_x, double* min_y,
                                  double* max_x, double* max_y);
 
+  void updateRaytraceBounds(double ox, double oy, double wx, double wy, double max_range, double min_range, double* min_x, double* min_y,
+                            double* max_x, double* max_y);
+
   void updateRaytraceBounds(double ox, double oy, double wx, double wy, double range, double* min_x, double* min_y,
                             double* max_x, double* max_y);
 
