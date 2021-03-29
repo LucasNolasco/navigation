@@ -574,14 +574,17 @@ void ObstacleLayer::raytraceFreespace(const Observation& clearing_observation, d
     if (!worldToMap(wx, wy, x1, y1))
       continue;
 
+    // unsigned int cell_raytrace_range = cellDistance(clearing_observation.raytrace_range_);
     unsigned int cell_raytrace_max_range = cellDistance(clearing_observation.raytrace_range_);
-    unsigned int cell_raytrace_min_range = cellDistance(MIN_TRACE_RANGE);
+    unsigned int cell_raytrace_min_range = cellDistance(raytrace_min_range_);
+
     MarkCell marker(costmap_, FREE_SPACE);
     // and finally... we can execute our trace to clear obstacles along that line
-    std::cout << "Raytrace max: " << cell_raytrace_max_range << ", Raytrace min: " << cell_raytrace_min_range << std::endl;
+    // raytraceLine(marker, x0, y0, x1, y1, cell_raytrace_range);
     raytraceLine(marker, x0, y0, x1, y1, cell_raytrace_max_range, cell_raytrace_min_range);
 
-    updateRaytraceBounds(ox, oy, wx, wy, clearing_observation.raytrace_range_, MIN_TRACE_RANGE, min_x, min_y, max_x, max_y);
+    updateRaytraceBounds(ox, oy, wx, wy, clearing_observation.raytrace_range_,
+      raytrace_min_range_, min_x, min_y, max_x, max_y);
   }
 }
 
@@ -618,6 +621,16 @@ void ObstacleLayer::updateRaytraceBounds(double ox, double oy, double wx, double
     return;
   }
   double scale = std::min(1.0, max_range / full_distance);
+  double ex = ox + dx * scale, ey = oy + dy * scale;
+  touch(ex, ey, min_x, min_y, max_x, max_y);
+}
+
+void ObstacleLayer::updateRaytraceBounds(double ox, double oy, double wx, double wy, double range,
+                                         double* min_x, double* min_y, double* max_x, double* max_y)
+{
+  double dx = wx-ox, dy = wy-oy;
+  double full_distance = hypot(dx, dy);
+  double scale = std::min(1.0, range / full_distance);
   double ex = ox + dx * scale, ey = oy + dy * scale;
   touch(ex, ey, min_x, min_y, max_x, max_y);
 }

@@ -171,6 +171,8 @@ protected:
 
   int combination_method_;
 
+  double raytrace_min_range_ = 2.0;
+
 private:
   void reconfigureCB(costmap_2d::ObstaclePluginConfig &config, uint32_t level);
 };
