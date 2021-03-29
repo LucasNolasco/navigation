@@ -110,7 +110,7 @@ void ObstacleLayer::onInitialize()
       throw std::runtime_error("Only topics that use point clouds or laser scans are currently supported");
     }
 
-    std::string raytrace_range_param_name, obstacle_range_param_name;
+    std::string raytrace_max_range_param_name, raytrace_min_range_param_name, obstacle_range_param_name;
 
     // get the obstacle range for the sensor
     double obstacle_range = 2.5;
@@ -120,10 +120,14 @@ void ObstacleLayer::onInitialize()
     }
 
     // get the raytrace range for the sensor
-    double raytrace_range = 3.0;
-    if (source_node.searchParam("raytrace_range", raytrace_range_param_name))
+    double raytrace_max_range = 3.0, raytrace_min_range = 0.0;
+    if (source_node.searchParam("raytrace_max_range", raytrace_max_range_param_name))
     {
-      source_node.getParam(raytrace_range_param_name, raytrace_range);
+      source_node.getParam(raytrace_max_range_param_name, raytrace_max_range);
+    }
+    if (source_node.searchParam("raytrace_min_range", raytrace_min_range_param_name))
+    {
+      source_node.getParam(raytrace_min_range_param_name, raytrace_min_range);
     }
 
     ROS_DEBUG("Creating an observation buffer for source %s, topic %s, frame %s", source.c_str(), topic.c_str(),
@@ -133,7 +137,7 @@ void ObstacleLayer::onInitialize()
     observation_buffers_.push_back(
         boost::shared_ptr < ObservationBuffer
             > (new ObservationBuffer(topic, observation_keep_time, expected_update_rate, min_obstacle_height,
-                                     max_obstacle_height, obstacle_range, raytrace_range, *tf_, global_frame_,
+                                     max_obstacle_height, obstacle_range, raytrace_max_range, raytrace_min_range, *tf_, global_frame_,
                                      sensor_frame, transform_tolerance)));
 
     // check if we'll add this buffer to our marking observation buffers
@@ -528,7 +532,7 @@ void ObstacleLayer::raytraceFreespace(const Observation& clearing_observation, d
   // for each point in the cloud, we want to trace a line from the origin and clear obstacles along it
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
-
+  
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y)
   {
     double wx = *iter_x;
@@ -575,16 +579,16 @@ void ObstacleLayer::raytraceFreespace(const Observation& clearing_observation, d
       continue;
 
     // unsigned int cell_raytrace_range = cellDistance(clearing_observation.raytrace_range_);
-    unsigned int cell_raytrace_max_range = cellDistance(clearing_observation.raytrace_range_);
-    unsigned int cell_raytrace_min_range = cellDistance(raytrace_min_range_);
+    unsigned int cell_raytrace_max_range = cellDistance(clearing_observation.raytrace_max_range_);
+    unsigned int cell_raytrace_min_range = cellDistance(clearing_observation.raytrace_min_range_);
 
     MarkCell marker(costmap_, FREE_SPACE);
     // and finally... we can execute our trace to clear obstacles along that line
     // raytraceLine(marker, x0, y0, x1, y1, cell_raytrace_range);
     raytraceLine(marker, x0, y0, x1, y1, cell_raytrace_max_range, cell_raytrace_min_range);
 
-    updateRaytraceBounds(ox, oy, wx, wy, clearing_observation.raytrace_range_,
-      raytrace_min_range_, min_x, min_y, max_x, max_y);
+    updateRaytraceBounds(ox, oy, wx, wy, clearing_observation.raytrace_max_range_,
+      clearing_observation.raytrace_min_range_, min_x, min_y, max_x, max_y);
   }
 }
 

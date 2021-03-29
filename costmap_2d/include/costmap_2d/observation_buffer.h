@@ -74,7 +74,7 @@ public:
    */
   ObservationBuffer(std::string topic_name, double observation_keep_time, double expected_update_rate,
                     double min_obstacle_height, double max_obstacle_height, double obstacle_range,
-                    double raytrace_range, tf2_ros::Buffer& tf2_buffer, std::string global_frame,
+                    double raytrace_max_range, double raytrace_min_range, tf2_ros::Buffer& tf2_buffer, std::string global_frame,
                     std::string sensor_frame, double tf_tolerance);
 
   /**
@@ -147,7 +147,7 @@ private:
   std::string topic_name_;
   double min_obstacle_height_, max_obstacle_height_;
   boost::recursive_mutex lock_;  ///< @brief A lock for accessing data in callbacks safely
-  double obstacle_range_, raytrace_range_;
+  double obstacle_range_, raytrace_max_range_, raytrace_min_range_;
   double tf_tolerance_;
 };
 }  // namespace costmap_2d

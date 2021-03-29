@@ -47,12 +47,12 @@ namespace costmap_2d
 {
 ObservationBuffer::ObservationBuffer(string topic_name, double observation_keep_time, double expected_update_rate,
                                      double min_obstacle_height, double max_obstacle_height, double obstacle_range,
-                                     double raytrace_range, tf2_ros::Buffer& tf2_buffer, string global_frame,
-                                     string sensor_frame, double tf_tolerance) :
+                                     double raytrace_max_range, double raytrace_min_range, tf2_ros::Buffer& tf2_buffer, 
+                                     string global_frame, string sensor_frame, double tf_tolerance) :
     tf2_buffer_(tf2_buffer), observation_keep_time_(observation_keep_time), expected_update_rate_(expected_update_rate),
     last_updated_(ros::Time::now()), global_frame_(global_frame), sensor_frame_(sensor_frame), topic_name_(topic_name),
     min_obstacle_height_(min_obstacle_height), max_obstacle_height_(max_obstacle_height),
-    obstacle_range_(obstacle_range), raytrace_range_(raytrace_range), tf_tolerance_(tf_tolerance)
+    obstacle_range_(obstacle_range), raytrace_max_range_(raytrace_max_range), raytrace_min_range_(raytrace_min_range), tf_tolerance_(tf_tolerance)
 {
 }
 
@@ -128,7 +128,8 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::PointCloud2& cloud)
     tf2::convert(global_origin.point, observation_list_.front().origin_);
 
     // make sure to pass on the raytrace/obstacle range of the observation buffer to the observations
-    observation_list_.front().raytrace_range_ = raytrace_range_;
+    observation_list_.front().raytrace_max_range_ = raytrace_max_range_;
+    observation_list_.front().raytrace_min_range_ = raytrace_min_range_;
     observation_list_.front().obstacle_range_ = obstacle_range_;
 
     sensor_msgs::PointCloud2 global_frame_cloud;
