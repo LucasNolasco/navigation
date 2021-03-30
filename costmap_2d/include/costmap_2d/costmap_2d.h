@@ -369,11 +369,8 @@ protected:
       int offset_dx = sign(dx);
       int offset_dy = sign(dy) * size_x_;
 
-      // unsigned int offset = y0 * size_x_ + x0;
-
       // we need to chose how much to scale our dominant dimension, based on the maximum length of the line
       double dist = hypot(dx, dy);
-      // double scale = (dist == 0.0) ? 1.0 : std::min(1.0, max_length / dist);
       if (dist < min_length) {
         return;
       }
@@ -410,9 +407,12 @@ private:
                             int offset_b, unsigned int offset, unsigned int max_length)
     {
       unsigned int end = std::min(max_length, abs_da);
+      unsigned int costmap_dimension = size_y_ * size_x_;
       for (unsigned int i = 0; i < end; ++i)
       {
-        at(offset);
+        if (offset < costmap_dimension) { /* Check dimensions before accessing */
+          at(offset);
+        }
         offset += offset_a;
         error_b += abs_db;
         if ((unsigned int)error_b >= abs_da)
@@ -421,7 +421,10 @@ private:
           error_b -= abs_da;
         }
       }
-      at(offset);
+
+      if (offset < costmap_dimension) { /* Check dimensions before accessing */
+        at(offset);
+      }
     }
 
   inline int sign(int x)
