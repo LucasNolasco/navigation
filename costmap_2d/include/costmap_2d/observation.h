@@ -72,6 +72,25 @@ public:
       obstacle_max_range_(obstacle_max_range), obstacle_min_range_(obstacle_min_range),
       raytrace_max_range_(raytrace_max_range), raytrace_min_range_(raytrace_min_range)
   {
+    obstacle_range_ = obstacle_max_range;
+    raytrace_range_ = raytrace_max_range;
+  }
+
+  /**
+   * @brief  Creates an observation from an origin point and a point cloud
+   * @param origin The origin point of the observation
+   * @param cloud The point cloud of the observation
+   * @param obstacle_range The range out to which an observation should be able to insert obstacles
+   * @param raytrace_range The range out to which an observation should be able to clear via raytracing
+   */
+  Observation(geometry_msgs::Point& origin, const sensor_msgs::PointCloud2 &cloud,
+              double obstacle_range, double raytrace_range) :
+      origin_(origin), cloud_(new sensor_msgs::PointCloud2(cloud)),
+      obstacle_max_range_(obstacle_range), obstacle_min_range_(0.0),
+      raytrace_max_range_(raytrace_range), raytrace_min_range_(0.0)
+  {
+    obstacle_range_ = obstacle_range;
+    raytrace_range_ = raytrace_range;
   }
 
   /**
@@ -99,6 +118,7 @@ public:
   geometry_msgs::Point origin_;
   sensor_msgs::PointCloud2* cloud_;
   double obstacle_max_range_, obstacle_min_range_, raytrace_max_range_, raytrace_min_range_;
+  double obstacle_range_, raytrace_range_;
 };
 
 }  // namespace costmap_2d
